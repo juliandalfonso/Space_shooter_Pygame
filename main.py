@@ -4,6 +4,9 @@ import os
 import time
 import random
 
+# Cargamos las fuentes para usarlas en el juego
+pygame.font.init()
+
 #Resolution
 WIDTH, HEIGHT = 750, 750
 #setting the window
@@ -24,28 +27,148 @@ RED_LASER = pygame.image.load(os.path.join("assets", "pixel_laser_red.png"))
 GREEN_LASER = pygame.image.load(os.path.join("assets", "pixel_laser_green.png"))
 BLUE_LASER = pygame.image.load(os.path.join("assets", "pixel_laser_blue.png"))
 YELLOW_LASER = pygame.image.load(os.path.join("assets", "pixel_laser_yellow.png"))
-# Background
-BG = pygame.image.load(os.path.join("assets", "Background-black.png"))
+
+# Background sin escalar
+# BG = pygame.image.load(os.path.join("assets", "Background-black.png"))
+#background escalado a la pantalla
+BG = pygame.transform.scale(pygame.image.load(os.path.join("assets", "Background-black.png")), (WIDTH, HEIGHT))
 
 
+class Ship:
+    def __init__(self, x, y, health=100):
+        self.x= x
+        self.y= y
+        self.health = health
+        self.ship_img = None 
+        self.laser_img = None 
+        self.lasers = []
+        self.cool_down_counter = 0
+        
+    def draw(self, window):
+        window.blit(self.ship_img, (self.x, self.y))
+        
+    def get_width(self):
+        return self.ship_img.get_width()
+    
+    def get_height(self):
+        return self.ship_img.get_height()
+        
+class Player(Ship):
+    def __init__(self, x, y, health=100):
+        super().__init__(x, y, health=health)
+        self.ship_img = YELLOW_SPACE_SHIP
+        self.laser_img = YELLOW_LASER
+        self.mask = pygame.mask.from_surface(self.ship_img)
+        self.max_health = health
+       
+       
+       
+       
+        
+class Enemy(Ship):
+    COLOR_MAP = {
+        "red": (RED_SPACE_SHIP, RED_LASER),
+        "green": (GREEN_SPACE_SHIP, GREEN_LASER),
+        "blue": (BLUE_SPACE_SHIP, BLUE_LASER)
+    }
+    
+    def __init__(self, x, y, color, health=100):
+        super().__init__(x, y, health=health)
+        
+        self.ship_img, self.laser_img = self.COLOR_MAP[color]
+        self.mask = pygame.mask.from_surface(self.ship_img)
+        
+    def move(self, vel):
+        self.y += vel
+    
+    
+    
+    
+        
+        
 def main():
     #variable que
     run = True
     #Velocidad de fotogramas por segundo
     FPS = 60
+    level = 0
+    lives = 5
+    main_font = pygame.font.SysFont("comicsans", 50)
+    player_vel = 5
     clock = pygame.time.Clock()
     
-    while run:
+
+    
+    enemies = []
+    wave_length = 5
+    enemy_vel = 1
+    
+    
+    #Creamos una nave
+    player = Player(300, 650)
+    
+    #funcion que dibuja todo en la pantalla
+    def redraw_window():
+        ##-------Area de dibujo ------------
+        #tomamos la imagen background y la colocamos en la posicion (0,0)
+        WIN.blit(BG, (0,0))
+        #dibujamos texto
+        # cargamos las vidas en la pantalla
+        lives_label = main_font.render(f"lives: {lives}", 1 , (255,255,255))
+        level_label = main_font.render(f"level: {level}",1, (255,255,255))
         
+        # Imprimimos las vidas y el nivel
+        WIN.blit(lives_label, (10,10))
+        WIN.blit(level_label, (WIDTH-level_label.get_width()-10,10))
+        
+        for enemy in enemies:
+            enemy.draw(WIN)
+            
+        player.draw(WIN)
+        
+        
+        
+        #actualizamos la pantalla cada iteracion
+        pygame.display.update()
+    
+    while run:
         #Velocidad del juego 
         clock.tick(FPS)
         
-        #detector de eventos en la pantalla
+        
+        
+        if len(enemies) == 0:
+            level+=1
+            wave_length +=5
+            for i in range(wave_length):
+                enemy = Enemy(random.randrange(50, WIDTH-100), random.randrange(-1500, -100), random.choice(["red", "blue", "green"]))
+                enemies.append(enemy)
+        
+        #capturador de eventos del juego  (clicks, teclado, mouse, etc)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 #acaba el juego al dar click en salir
                 run = False
+        # guarda todas las teclas presionadas en un diccionario
+        keys= pygame.key.get_pressed()
+        if keys[pygame.K_a] and player.x - player_vel > 0: #LEFT
+            player.x -= player_vel
+        if keys[pygame.K_d] and player.x + player_vel + player.get_width() < WIDTH: #Right
+            player.x += player_vel
+        if keys[pygame.K_w] and player.y - player_vel > 0: #UP
+            player.y -= player_vel
+        if keys[pygame.K_s] and player.y + player_vel + player.get_height() < HEIGHT: #Down
+            player.y += player_vel
             
+            
+        for enemy in enemies[:]:
+            enemy.move(enemy_vel)
+            if enemy.y + enemy.get_height() > HEIGHT:
+                lives -= 1
+                enemies.remove(enemy)
+        
+         #llamamos la funcion de dibujo
+        redraw_window()
 main()
             
         
