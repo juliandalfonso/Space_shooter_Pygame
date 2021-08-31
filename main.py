@@ -4,6 +4,7 @@ import os
 import time
 import random
 
+
 # Cargamos las fuentes para usarlas en el juego
 pygame.font.init()
 
@@ -12,7 +13,7 @@ WIDTH, HEIGHT = 750, 750
 #setting the window
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 #name of the window
-pygame.display.set_caption("Space Shooter Tutorial")
+pygame.display.set_caption("Space Shooter")
 
 
 
@@ -125,8 +126,13 @@ class Player(Ship):
                         objs.remove(obj)
                         self.lasers.remove(laser)
                         
-    def healthbar(self):
-        pass
+    def healthbar(self, window):
+        pygame.draw.rect(window, (255, 0,0), (self.x, self.y + self.ship_img.get_height() + 10, self.ship_img.get_width(), 10))
+        pygame.draw.rect(window, (0, 255,0), (self.x, self.y + self.ship_img.get_height() + 10, self.ship_img.get_width()* (self.health / self.max_health), 10))
+                         
+    def draw(self, window):
+        super().draw(window)
+        self.healthbar(window)
        
        
        
@@ -184,7 +190,7 @@ def main():
     
     
     #Creamos una nave
-    player = Player(300, 650)
+    player = Player(300, 630)
     
     #funcion que dibuja todo en la pantalla
     def redraw_window():
@@ -251,7 +257,7 @@ def main():
             player.x += player_vel
         if keys[pygame.K_w] and player.y - player_vel > 0: #UP
             player.y -= player_vel
-        if keys[pygame.K_s] and player.y + player_vel + player.get_height() < HEIGHT: #Down
+        if keys[pygame.K_s] and player.y + player_vel + player.get_height() + 15 < HEIGHT: #Down
             player.y += player_vel
         if keys[pygame.K_SPACE]:
             player.shoot()
@@ -275,6 +281,24 @@ def main():
                 
         player.move_lasers(-laser_vel, enemies)
         
-main()
+def main_menu():
+    title_font = pygame.font.SysFont("comicsans", 70)
+    run = True
+    while run: 
+        WIN.blit(BG, (0,0))
+        title_label = title_font.render("Press the mouse to begin...", 1, (255,255,255))
+        WIN.blit(title_label, (WIDTH/2 - title_label.get_width()/2, 350))
+        pygame.display.update()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                main()
+                
+                
+    pygame.quit()
+        
+main_menu()
             
         
